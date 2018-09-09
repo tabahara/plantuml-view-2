@@ -1,0 +1,17 @@
+@startuml test.svg
+actor U
+participant A
+participant B
+U -> A : call
+A -> B : call
+A <-- B
+B -> C
+U <-- A
+A -> C
+@enduml
+
+@startuml test2.svg
+class A
+class B
+class C
+@enduml

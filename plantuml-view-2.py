@@ -38,11 +38,13 @@ class PlantUMLView2(QApplication):
         if self.target_dir == '':
             self.target_dir = '.'
         self.observer = Observer()
-        self.observer.schedule(plantuml_handler, os.path.basename(self.target_dir))
+
+        print(self.target_dir)
+
+        self.observer.schedule(plantuml_handler, self.target_dir)
 
         self.root_view.resize(500,600)
         self.root_view.show()
-
 
     def quit_application(self):
         print("aboutToQuit")
@@ -60,7 +62,8 @@ class PlantUMLView2(QApplication):
     update_data = pyqtSignal()
 
     def plantuml(self):
-        subprocess.call(['java', '-jar', 'bin/plantuml.1.2018.10.jar', '-svg', self.target_file])
+        plantuml_path = os.path.join(os.path.dirname(self.arguments()[0]),'plantuml.jar')
+        subprocess.call(['java', '-jar', plantuml_path, '-svg', self.target_file])
         self.update_data.emit()
 
     def update_view(self):
@@ -81,7 +84,7 @@ class PlantUMLView2(QApplication):
             match = re.search(r'@enduml', line)
             if match:
                 if current_output_filename:
-                    result.append(current_output_filename)
+                    result.append(os.path.join(self.target_dir, current_output_filename))
                     current_output_filename = None
                 continue
 
@@ -106,11 +109,11 @@ class PlantUMLHandler(FileSystemEventHandler):
 class MainWindow(QMainWindow):
     def __init__(self):
         super(MainWindow, self).__init__()
-        self.layout = QVBoxLayout(self)
         self.tabs = QTabWidget()
         self.init_ui()
 
     def update_file(self):
+        self.tabs.clear()
         for f in QApplication.instance().svg_list():
             self.add(f)
 
@@ -126,7 +129,7 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(self.tabs)
 
     def add(self, svg_file):
-        tab_name = svg_file
+        tab_name = os.path.basename(svg_file)
 
         svg_view = None
         for i in range(self.tabs.count()):
