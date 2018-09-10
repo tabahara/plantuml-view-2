@@ -12,8 +12,8 @@ import os
 import sys
 
 # for ctrl-c
-import signal
-signal.signal(signal.SIGINT, signal.SIG_DFL)
+#import signal
+#signal.signal(signal.SIGINT, signal.SIG_DFL)
 
 
 class PlantUMLView2(QApplication):
@@ -62,7 +62,9 @@ class PlantUMLView2(QApplication):
     update_data = pyqtSignal()
 
     def plantuml(self):
-        plantuml_path = os.path.join(os.path.dirname(self.arguments()[0]),'plantuml.jar')
+        # plantuml_path = os.path.join(os.path.dirname(self.arguments()[0]),'plantuml.jar')
+        plantuml_path = os.path.join(os.path.dirname(os.path.abspath(sys.executable)), 'plantuml.jar')
+        print("PlantUML path:%s"%plantuml_path)
         subprocess.call(['java', '-jar', plantuml_path, '-svg', self.target_file])
         self.update_data.emit()
 
