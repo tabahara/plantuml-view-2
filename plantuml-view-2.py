@@ -2,18 +2,22 @@ import re
 import subprocess
 from typing import List
 
+import magic
+import pathlib
 from PyQt5.QtCore import pyqtSignal, pyqtSlot
 from PyQt5.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QTabWidget, QApplication, QMenu, QSizePolicy
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
+
+from pngview import PngView
 from svgview import SvgView
 
 import os
 import sys
 
 # for ctrl-c
-#import signal
-#signal.signal(signal.SIGINT, signal.SIG_DFL)
+# import signal
+# signal.signal(signal.SIGINT, signal.SIG_DFL)
 
 
 class PlantUMLView2(QApplication):
@@ -61,18 +65,31 @@ class PlantUMLView2(QApplication):
 
     update_data = pyqtSignal()
 
+    # output_mode = "PNG"  # "SVG"
+    output_mode = "SVG"
+
     def plantuml(self):
         # plantuml_path = os.path.join(os.path.dirname(self.arguments()[0]),'plantuml.jar')
         plantuml_path = os.path.join(os.path.dirname(os.path.abspath(sys.executable)), 'plantuml.jar')
         print("PlantUML path:%s"%plantuml_path)
-        subprocess.call(['java', '-jar', plantuml_path, '-svg', self.target_file])
+        subprocess.call(['java', '-jar', plantuml_path, self.target_file])
+        if self.output_mode == "SVG":
+            subprocess.call(['java', '-jar', plantuml_path, '-svg', self.target_file])
+
         self.update_data.emit()
 
     def update_view(self):
-        for svg_file in self.svg_list():
-            self.root_view.add(svg_file)
+        for diagram_file in self.diagram_list():
+            self.root_view.add(diagram_file)
 
-    def svg_list(self) -> List:
+    def resolve_proper_filename(self, n):
+        p = pathlib.PurePath(n)
+        if self.output_mode == "SVG":
+            return p.with_name(p.name[:p.name.find('.')]).with_suffix('.svg').as_posix()
+        else:
+            return p.with_name(p.name[:p.name.find('.')]).with_suffix('.png').as_posix()
+
+    def diagram_list(self) -> List:
         result = []
         f = open(self.target_file)
 
@@ -80,7 +97,7 @@ class PlantUMLView2(QApplication):
         for line in f:
             match = re.search(r'@startuml[ \t]+([^\s]+)', line)
             if match:
-                current_output_filename = match.group(1)
+                current_output_filename = self.resolve_proper_filename(match.group(1))
                 continue
 
             match = re.search(r'@enduml', line)
@@ -116,7 +133,7 @@ class MainWindow(QMainWindow):
 
     def update_file(self):
         self.tabs.clear()
-        for f in QApplication.instance().svg_list():
+        for f in QApplication.instance().diagram_list():
             self.add(f)
 
     def init_ui(self):
@@ -130,20 +147,25 @@ class MainWindow(QMainWindow):
         self.menuBar().addMenu(file_menu)
         self.setCentralWidget(self.tabs)
 
-    def add(self, svg_file):
-        tab_name = os.path.basename(svg_file)
+    def add(self, file):
+        tab_name = os.path.basename(file)
 
-        svg_view = None
+        view = None
         for i in range(self.tabs.count()):
             if self.tabs.tabText(i) == tab_name :
-                svg_view = self.tabs.widget(i)
+                view = self.tabs.widget(i)
                 break
 
-        if svg_view is None:
-            svg_view = SvgView()
-            self.tabs.addTab(svg_view, tab_name)
+        if view is None:
+            m = magic.from_file(file)
+            if m[:3] == 'PNG':
+                view = PngView()
+            elif m[:3] == 'SVG':
+                view = SvgView()
 
-        svg_view.open_file(svg_file)
+            self.tabs.addTab(view, tab_name)
+
+        view.open_file(file)
 
 
 if __name__ == '__main__':

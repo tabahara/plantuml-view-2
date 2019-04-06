@@ -1,4 +1,4 @@
-@startuml test.svg
+@startuml out/test.svg
 actor U
 participant A
 participant B
@@ -10,7 +10,7 @@ U <-- A
 A -> C
 @enduml
 
-@startuml test2.svg
+@startuml te.st2
 class A
 class B
 class C
