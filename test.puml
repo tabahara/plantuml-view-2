@@ -1,4 +1,4 @@
-@startuml out/test.svg
+@startuml out/test
 actor U
 participant A
 participant B
@@ -8,6 +8,10 @@ A <-- B
 B -> C
 U <-- A
 A -> C
+@enduml
+
+@startuml hoge.hoge/pupu
+class A
 @enduml
 
 @startuml te.st2

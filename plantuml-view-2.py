@@ -84,10 +84,17 @@ class PlantUMLView2(QApplication):
 
     def resolve_proper_filename(self, n):
         p = pathlib.PurePath(n)
-        if self.output_mode == "SVG":
-            return p.with_name(p.name[:p.name.find('.')]).with_suffix('.svg').as_posix()
+
+        pos = p.name.find('.')
+        if pos != -1 :
+            name = p.name[:pos]
         else:
-            return p.with_name(p.name[:p.name.find('.')]).with_suffix('.png').as_posix()
+            name = p.name
+
+        if self.output_mode == "SVG":
+            return p.with_name(name).with_suffix('.svg').as_posix()
+        else:
+            return p.with_name(name).with_suffix('.png').as_posix()
 
     def diagram_list(self) -> List:
         result = []
